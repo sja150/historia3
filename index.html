@@ -3,355 +3,271 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Imperia Kolonialne XIX/XX w.</title>
+    <title>Imperia Kolonialne - Wersja Interaktywna v2</title>
     <style>
         :root {
-            --bg-color: #0f172a;
-            --text-color: #e2e8f0;
-            --accent-old: #3b82f6; /* Niebieski dla starych */
-            --accent-new: #ef4444; /* Czerwony dla nowych */
-            --card-bg: #1e293b;
+            --bg-dark: #1a1a2e;
+            --text-light: #e0e0e0;
+            /* Kolory Imperiów */
+            --uk-color: rgba(220, 20, 60, 0.7);     /* Czerwień brytyjska */
+            --fr-color: rgba(30, 144, 255, 0.7);    /* Błękit francuski */
+            --de-color: rgba(105, 105, 105, 0.8);   /* Szarość niemiecka */
+            --us-color: rgba(65, 105, 225, 0.7);    /* Granat USA */
+            --route-color: rgba(255, 215, 0, 0.6);  /* Złoty dla szlaków */
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
             margin: 0;
-            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-light);
             overflow-x: hidden;
         }
 
-        header {
-            text-align: center;
-            padding: 2rem;
-            background: linear-gradient(to right, #1e293b, #0f172a);
-            border-bottom: 2px solid #334155;
-            animation: fadeIn Down 1s ease-out;
-        }
+        h1, h2 { text-align: center; margin: 10px 0; text-transform: uppercase; letter-spacing: 2px;}
+        .subtitle { text-align: center; color: #a0a0a0; margin-bottom: 20px; }
 
-        h1 { margin: 0; font-size: 2.5rem; letter-spacing: 2px; }
-        p.subtitle { color: #94a3b8; font-size: 1.2rem; }
-
+        /* Kontener główny */
         .container {
             max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
         }
 
-        /* Sekcja Sterowania */
-        .controls {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .btn {
-            padding: 12px 24px;
-            border: none;
-            border-radius: 8px;
-            font-size: 1rem;
-            cursor: pointer;
-            font-weight: bold;
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-        }
-
-        .btn-old { background-color: transparent; border: 2px solid var(--accent-old); color: var(--accent-old); }
-        .btn-old:hover, .btn-old.active { background-color: var(--accent-old); color: white; box-shadow: 0 0 15px var(--accent-old); }
-
-        .btn-new { background-color: transparent; border: 2px solid var(--accent-new); color: var(--accent-new); }
-        .btn-new:hover, .btn-new.active { background-color: var(--accent-new); color: white; box-shadow: 0 0 15px var(--accent-new); }
-
-        .btn-reset { background-color: #475569; color: white; }
-        .btn-reset:hover { background-color: #64748b; }
-
-        /* Mapa SVG */
-        .map-container {
-            position: relative;
-            background: var(--card-bg);
+        /* Oś czasu */
+        .timeline-control {
+            background: #0f0f1a;
+            padding: 20px;
             border-radius: 15px;
-            padding: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            margin-bottom: 40px;
-            height: 500px; /* Wysokość kontenera mapy */
-            overflow: hidden;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+        
+        input[type=range] {
+            width: 80%;
+            margin: 15px 0;
         }
 
-        svg {
+        .timeline-labels {
+            display: flex;
+            justify-content: space-between;
+            width: 85%;
+            margin: 0 auto;
+            font-weight: bold;
+            color: #a0a0a0;
+        }
+        .active-label { color: #fff; text-shadow: 0 0 10px #fff;}
+
+
+        /* MAPA - To jest kluczowa sekcja */
+        .map-wrapper {
+            position: relative;
             width: 100%;
-            height: 100%;
-            filter: drop-shadow(0 0 5px rgba(0,0,0,0.5));
+            /* Tło udające starą mapę - możesz tu wstawić prawdziwy obrazek w url() */
+            background-image: url('https://www.transparenttextures.com/patterns/aged-paper.png'), linear-gradient(to bottom, #2c3e50, #1a1a2e); 
+            background-blend-mode: overlay;
+            height: 600px;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: inset 0 0 100px rgba(0,0,0,0.8), 0 10px 30px rgba(0,0,0,0.5);
+            border: 3px solid #3a3a5a;
         }
 
-        .land {
-            fill: #334155;
-            stroke: #1e293b;
-            stroke-width: 1;
-            transition: fill 0.5s ease;
+        /* Bazowa mapa konturowa (dla orientacji) - bardzo subtelna */
+        .base-map-svg {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            opacity: 0.2;
+            pointer-events: none;
+        }
+        .base-land { fill: #000; stroke: #555; stroke-width: 0.5; }
+
+        /* GŁÓWNE ELEMENTY PODŚWIETLENIA (Gradientowe Aury) */
+        .aura {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(40px); /* Kluczowy efekt rozmycia */
+            mix-blend-mode: screen; /* Sprawia, że kolory "świecą" */
+            opacity: 0.6;
+            transition: all 0.8s ease-in-out;
             cursor: pointer;
         }
 
-        .land:hover {
-            fill: #475569;
-        }
+        .aura:hover { opacity: 0.9; filter: blur(30px); transform: scale(1.1); }
 
-        /* Klasy do kolorowania mapy */
-        .highlight-old { fill: var(--accent-old) !important; animation: pulseBlue 2s infinite; }
-        .highlight-new { fill: var(--accent-new) !important; animation: pulseRed 2s infinite; }
+        /* Style dla konkretnych państw */
+        .uk-aura { background: radial-gradient(circle, var(--uk-color) 0%, transparent 70%); }
+        .fr-aura { background: radial-gradient(circle, var(--fr-color) 0%, transparent 70%); }
+        .de-aura { background: radial-gradient(circle, var(--de-color) 0%, transparent 70%); }
+        .us-aura { background: radial-gradient(circle, var(--us-color) 0%, transparent 70%); }
 
-        /* Etykiety na mapie */
-        .map-label {
+        /* Pozycjonowanie aur na mapie (procentowe, aby było responsywne) */
+        /* UK & Indie */
+        .pos-uk { top: 15%; left: 47%; width: 10%; height: 15%; }
+        .pos-india { top: 40%; left: 65%; width: 15%; height: 20%; }
+        .pos-cape { top: 70%; left: 50%; width: 12%; height: 15%; } /* Kapsztad */
+        
+        /* Francja */
+        .pos-fr-africa { top: 35%; left: 42%; width: 18%; height: 25%; } /* Afryka Zach */
+        .pos-indochina { top: 45%; left: 78%; width: 8%; height: 15%; }
+        
+        /* Niemcy (pojawiają się później) */
+        .pos-de-togo { top: 45%; left: 48%; width: 6%; height: 8%; }
+        .pos-de-namibia { top: 65%; left: 48%; width: 8%; height: 10%; }
+
+        /* USA (ekspansja) */
+        .pos-usa-main { top: 25%; left: 15%; width: 25%; height: 30%; }
+        .pos-usa-carib { top: 45%; left: 25%; width: 10%; height: 10%; } /* Kuba etc */
+        .pos-usa-phil { top: 50%; left: 85%; width: 8%; height: 12%; } /* Filipiny */
+
+
+        /* SZLAKI WODNE */
+        .routes-svg {
             position: absolute;
-            background: rgba(0,0,0,0.8);
-            padding: 5px 10px;
-            border-radius: 4px;
-            font-size: 0.8rem;
+            top: 0; left: 0; width: 100%; height: 100%;
             pointer-events: none;
+            filter: drop-shadow(0 0 5px gold);
+        }
+        .route-line {
+            fill: none;
+            stroke: var(--route-color);
+            stroke-width: 2;
+            stroke-dasharray: 10, 10;
+            opacity: 0.5;
+            animation: dashMove 30s linear infinite;
+        }
+
+        @keyframes dashMove {
+            to { stroke-dashoffset: -200; }
+        }
+
+        /* LOGIKA OSI CZASU (Ukrywanie/Pokazywanie) */
+        
+        /* Stan domyślny (Połowa XIX w.) - ukrywamy "nowe" imperia */
+        .map-wrapper[data-era="early"] .era-late-only {
             opacity: 0;
-            transition: opacity 0.3s;
-            transform: translate(-50%, -100%);
+            transform: scale(0);
+        }
+        
+        /* Stan późny (Przełom XIX/XX w.) - pokazujemy wszystko */
+        .map-wrapper[data-era="late"] .era-late-only {
+            opacity: 1;
+            transform: scale(1);
         }
 
-        /* Sekcja Informacyjna (Karty) */
-        .info-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-        }
-
-        .card {
-            background: var(--card-bg);
+        /* Panel Informacyjny */
+        #info-panel {
+            background: rgba(15, 15, 26, 0.95);
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            width: 300px;
             padding: 20px;
-            border-radius: 12px;
-            border-left: 5px solid #64748b;
-            transition: transform 0.3s;
+            border-radius: 10px;
+            border-left: 4px solid #fff;
+            backdrop-filter: blur(10px);
+            transform: translateY(150%); /* Domyślnie ukryty */
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-
-        .card:hover { transform: translateY(-5px); }
-        .card h3 { margin-top: 0; }
-        .card ul { padding-left: 20px; }
-        .card li { margin-bottom: 8px; }
-
-        /* Wykresy animowane */
-        .chart-container {
-            margin-top: 20px;
-        }
-        .bar-wrapper {
-            margin-bottom: 10px;
-        }
-        .bar-label { display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 5px;}
-        .bar-bg { background: #334155; height: 10px; border-radius: 5px; overflow: hidden; }
-        .bar-fill { height: 100%; border-radius: 5px; width: 0%; transition: width 1.5s cubic-bezier(0.4, 0, 0.2, 1); }
-
-        .fill-gb { background: var(--accent-old); }
-        .fill-fr { background: #60a5fa; }
-        .fill-de { background: var(--accent-new); }
-        .fill-us { background: #f87171; }
-
-        /* Animacje */
-        @keyframes pulseBlue {
-            0% { filter: drop-shadow(0 0 0px var(--accent-old)); }
-            50% { filter: drop-shadow(0 0 10px var(--accent-old)); }
-            100% { filter: drop-shadow(0 0 0px var(--accent-old)); }
-        }
-        @keyframes pulseRed {
-            0% { filter: drop-shadow(0 0 0px var(--accent-new)); }
-            50% { filter: drop-shadow(0 0 10px var(--accent-new)); }
-            100% { filter: drop-shadow(0 0 0px var(--accent-new)); }
-        }
-
-        /* Sekcja Skutków - Interaktywna */
-        .comparison {
-            display: flex;
-            gap: 20px;
-            margin-top: 40px;
-        }
-        .col-half { flex: 1; background: #252f3f; padding: 20px; border-radius: 10px; }
-        .positive { border-top: 4px solid #10b981; }
-        .negative { border-top: 4px solid #ef4444; }
+        #info-panel.active { transform: translateY(0); }
+        #info-title { margin: 0 0 10px 0; color: gold; }
+        #info-desc { font-size: 0.9rem; line-height: 1.4; }
+        .close-btn { position: absolute; top: 5px; right: 10px; cursor: pointer; font-weight: bold;}
 
     </style>
 </head>
 <body>
 
-<header>
-    <h1>IMPERIALIZM KOLONIALNY</h1>
-    <p class="subtitle">Przełom XIX i XX wieku: Rywalizacja Mocarstw</p>
-</header>
-
 <div class="container">
+    <h1>Rywalizacja Mocarstw</h1>
+    <p class="subtitle">Wizualizacja ekspansji kolonialnej XIX/XX w.</p>
 
-    <div class="controls">
-        <button class="btn btn-old" onclick="showScenario('old')">Pokaż STARE Imperia</button>
-        <button class="btn btn-new" onclick="showScenario('new')">Pokaż NOWE Imperia</button>
-        <button class="btn btn-reset" onclick="resetMap()">Resetuj Mapę</button>
+    <div class="timeline-control">
+        <h2 id="era-title">Połowa XIX wieku</h2>
+        <input type="range" id="timelineSlider" min="0" max="1" step="1" value="0">
+        <div class="timeline-labels">
+            <span id="label-early" class="active-label">← Stare Imperia (do 1870)</span>
+            <span id="label-late">Nowy Imperializm (po 1870) →</span>
+        </div>
     </div>
 
-    <div class="map-container" id="mapSection">
-        <div id="tooltip" class="map-label">Info</div>
-        <svg viewBox="0 0 1000 500" xmlns="http://www.w3.org/2000/svg">
-            <rect width="1000" height="500" fill="#1e293b" opacity="0.3"/>
-            
-            <path id="usa" class="land" d="M 150 100 L 250 100 L 280 150 L 220 180 L 150 150 Z" 
-                  data-info="USA: Nowe Imperium (Filipiny, Kuba, Hawaje)"/>
-            <path id="canada" class="land" d="M 150 50 L 280 50 L 300 100 L 150 100 Z" 
-                  data-info="Kanada (Dominium Brytyjskie)"/>
+    <div class="map-wrapper" id="mainMap" data-era="early">
+        
+        <svg class="base-map-svg" viewBox="0 0 1000 600" xmlns="http://www.w3.org/2000/svg">
+             <path class="base-land" d="M100,100 Q200,50 300,100 T500,100 T700,50 T900,100 V200 H100 Z" /> <path class="base-land" d="M150,300 Q250,350 300,500 H200 Z" /> <path class="base-land" d="M450,300 Q550,350 600,550 H450 Z" /> <path class="base-land" d="M650,250 Q750,300 850,350 V200 H650 Z" /> </svg>
 
-            <path class="land" d="M 250 200 L 320 200 L 340 300 L 280 400 L 250 300 Z" 
-                  data-info="Ameryka Południowa: Niepodległa (strefa wpływów USA)"/>
-
-            <path id="uk" class="land" d="M 460 80 L 480 80 L 480 100 L 460 100 Z" 
-                  data-info="Wielka Brytania: Największe imperium świata"/>
-            <path id="france" class="land" d="M 480 100 L 510 100 L 500 130 L 480 130 Z" 
-                  data-info="Francja: Drugie imperium (Afryka Zach., Indochiny)"/>
-            <path id="germany" class="land" d="M 510 90 L 530 90 L 530 110 L 510 110 Z" 
-                  data-info="Niemcy: Nowy gracz, żąda 'miejsca pod słońcem'"/>
-            
-            <path id="africa-uk" class="land" d="M 480 150 L 550 150 L 550 250 L 500 350 L 480 250 Z" 
-                  data-info="Afryka Wschodnia i Południowa (Wpływy Brytyjskie)"/>
-            <path id="africa-fr" class="land" d="M 450 150 L 480 150 L 480 250 L 450 250 Z" 
-                  data-info="Afryka Zachodnia (Wpływy Francuskie)"/>
-
-            <path id="russia" class="land" d="M 550 50 L 850 50 L 850 120 L 550 120 Z" 
-                  data-info="Rosja: Ekspansja lądowa"/>
-            <path id="india" class="land" d="M 650 180 L 700 180 L 680 250 L 650 220 Z" 
-                  data-info="Indie Brytyjskie: Perła w Koronie"/>
-            <path id="japan" class="land" d="M 860 120 L 890 120 L 880 150 L 860 140 Z" 
-                  data-info="Japonia: Nowe mocarstwo Azji (Korea, Tajwan)"/>
-            
-            <path id="australia" class="land" d="M 800 300 L 900 300 L 900 400 L 800 380 Z" 
-                  data-info="Australia (Dominium Brytyjskie)"/>
-
-            <line x1="470" y1="90" x2="200" y2="120" stroke="#64748b" stroke-width="2" stroke-dasharray="5,5" opacity="0.5"/>
-            <line x1="470" y1="90" x2="670" y2="200" stroke="#64748b" stroke-width="2" stroke-dasharray="5,5" opacity="0.5"/>
+        <svg class="routes-svg" viewBox="0 0 1000 600">
+            <path class="route-line era-late-only" d="M 480 150 Q 530 180 600 220 T 680 300" />
+            <path class="route-line" d="M 200 200 Q 350 180 450 150" />
         </svg>
+
+        <div class="aura uk-aura pos-uk" onclick="showInfo('Wielka Brytania', 'Imperium, nad którym słońce nie zachodzi. Kontrola mórz, największa flota. Metropolia.')"></div>
+        <div class="aura uk-aura pos-india" onclick="showInfo('Indie Brytyjskie', '„Perła w Koronie”. Źródło bawełny, herbaty i rynek zbytu. Kluczowa kolonia.')"></div>
+        <div class="aura uk-aura pos-cape" onclick="showInfo('Afryka Południowa', 'Strategiczny punkt na drodze do Indii (zanim otwarto Kanał Sueski). Kopalnie złota i diamentów.')"></div>
+
+        <div class="aura fr-aura pos-fr-africa" onclick="showInfo('Francuska Afryka Zach.', 'Olbrzymie terytoria saharyjskie i subsaharyjskie. Misja cywilizacyjna.')"></div>
+        <div class="aura fr-aura pos-indochina era-late-only" onclick="showInfo('Indochiny Francuskie', 'Dzisiejszy Wietnam, Laos, Kambodża. Ryż, kauczuk. Zdobyte w II poł. XIX w.')"></div>
+
+        <div class="aura de-aura pos-de-togo era-late-only" onclick="showInfo('Niemieckie Kolonie', 'Togo, Kamerun. Niemcy spóźnione na podział świata żądały „miejsca pod słońcem”.')"></div>
+        <div class="aura de-aura pos-de-namibia era-late-only" onclick="showInfo('Niemiecka Afryka Płd.-Zach.', 'Dzisiejsza Namibia. Brutalne tłumienie powstań (Herero i Nama).')"></div>
+
+        <div class="aura us-aura pos-usa-main" onclick="showInfo('USA (Ekspansja Kontynentalna)', 'Realizacja „Boskiego Przeznaczenia” (Manifest Destiny). Opanowanie kontynentu od Atlantyku do Pacyfiku.')"></div>
+        <div class="aura us-aura pos-usa-carib era-late-only" onclick="showInfo('Karaiby (Strefa wpływów USA)', 'Po wojnie z Hiszpanią (1898): kontrola nad Kubą i Portoryko. Budowa Kanału Panamskiego.')"></div>
+        <div class="aura us-aura pos-usa-phil era-late-only" onclick="showInfo('Filipiny (USA)', 'Baza wypadowa na Pacyfik i w stronę Chin, zdobyta po 1898 roku.')"></div>
+
+        <div id="info-panel">
+            <span class="close-btn" onclick="hideInfo()">X</span>
+            <h3 id="info-title">Tytuł</h3>
+            <p id="info-desc">Opis</p>
+        </div>
+
     </div>
-
-    <div class="info-grid">
-        <div class="card">
-            <h3>📊 Wielkość Imperiów (mln km²)</h3>
-            <div class="chart-container">
-                <div class="bar-wrapper">
-                    <div class="bar-label"><span>Wielka Brytania</span><span>33.0</span></div>
-                    <div class="bar-bg"><div class="bar-fill fill-gb" style="width: 0%" id="bar-gb"></div></div>
-                </div>
-                <div class="bar-wrapper">
-                    <div class="bar-label"><span>Francja</span><span>11.0</span></div>
-                    <div class="bar-bg"><div class="bar-fill fill-fr" style="width: 0%" id="bar-fr"></div></div>
-                </div>
-                <div class="bar-wrapper">
-                    <div class="bar-label"><span>Niemcy</span><span>2.9</span></div>
-                    <div class="bar-bg"><div class="bar-fill fill-de" style="width: 0%" id="bar-de"></div></div>
-                </div>
-                <div class="bar-wrapper">
-                    <div class="bar-label"><span>USA</span><span>0.3</span></div>
-                    <div class="bar-bg"><div class="bar-fill fill-us" style="width: 0%" id="bar-us"></div></div>
-                </div>
-            </div>
-            <p style="font-size:0.8rem; color:#94a3b8; margin-top:10px;">*Stan na rok 1914</p>
-        </div>
-
-        <div class="card">
-            <h3>🇺🇸 Ekspansja USA (XIX w.)</h3>
-            <ul>
-                <li><strong>Do 1850:</strong> Zakup Luizjany, Florydy, Alaski. Wojna z Meksykiem (Teksas, Kalifornia).</li>
-                <li><strong>Po 1890:</strong> Koniec "Dzikiego Zachodu", wyjście na oceany.</li>
-                <li><strong>1898:</strong> Wojna z Hiszpanią -> Filipiny, Kuba, Portoryko.</li>
-                <li><strong>Cel:</strong> Otwarcie Chin na handel, kontrola Pacyfiku.</li>
-            </ul>
-        </div>
-    </div>
-
-    <div class="comparison">
-        <div class="col-half positive">
-            <h3>Dla Metropolii (Zyski)</h3>
-            <ul>
-                <li>Darmowe surowce (ropa, kauczuk, złoto)</li>
-                <li>Rynki zbytu dla własnych fabryk</li>
-                <li>Bazy wojskowe na całym świecie</li>
-                <li>Prestiż polityczny ("Mocarstwowość")</li>
-            </ul>
-        </div>
-        <div class="col-half negative">
-            <h3>Dla Kolonii (Straty)</h3>
-            <ul>
-                <li>Eksploatacja surowców bez zysku dla miejscowych</li>
-                <li>Zniszczenie lokalnych kultur i języków</li>
-                <li>Sztuczne granice (źródło wojen etnicznych)</li>
-                <li>Przymusowa praca i brutalne tłumienie buntów</li>
-            </ul>
-        </div>
-    </div>
-
 </div>
 
 <script>
-    // Logika Interakcji
+    const slider = document.getElementById('timelineSlider');
+    const mapWrapper = document.getElementById('mainMap');
+    const eraTitle = document.getElementById('era-title');
+    const labelEarly = document.getElementById('label-early');
+    const labelLate = document.getElementById('label-late');
+    const infoPanel = document.getElementById('info-panel');
+    const infoTitle = document.getElementById('info-title');
+    const infoDesc = document.getElementById('info-desc');
 
-    const lands = document.querySelectorAll('.land');
-    const tooltip = document.getElementById('tooltip');
-    
-    // Obsługa Tooltipów
-    lands.forEach(land => {
-        land.addEventListener('mousemove', (e) => {
-            tooltip.style.left = e.pageX + 'px';
-            tooltip.style.top = e.pageY + 'px';
-            tooltip.innerText = land.getAttribute('data-info');
-            tooltip.style.opacity = 1;
-        });
-        land.addEventListener('mouseleave', () => {
-            tooltip.style.opacity = 0;
-        });
+    // Obsługa Osi Czasu
+    slider.addEventListener('input', function() {
+        if (this.value === "0") {
+            // Wczesny okres
+            mapWrapper.setAttribute('data-era', 'early');
+            eraTitle.innerText = "Połowa XIX wieku (Dominacja Starych Imperiów)";
+            labelEarly.classList.add('active-label');
+            labelLate.classList.remove('active-label');
+            hideInfo(); // Ukryj info przy zmianie czasu
+        } else {
+            // Późny okres
+            mapWrapper.setAttribute('data-era', 'late');
+            eraTitle.innerText = "Przełom XIX i XX wieku (Wyścig o Afrykę i Pacyfik)";
+            labelEarly.classList.remove('active-label');
+            labelLate.classList.add('active-label');
+            hideInfo();
+        }
     });
 
-    // Funkcje Scenariuszy
-    function resetMap() {
-        lands.forEach(land => {
-            land.classList.remove('highlight-old', 'highlight-new');
-        });
-        document.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
+    // Obsługa Panelu Informacyjnego
+    function showInfo(title, desc) {
+        infoTitle.innerText = title;
+        infoDesc.innerText = desc;
+        infoPanel.classList.add('active');
+        // Zmiana koloru ramki panelu w zależności od imperium (opcjonalne)
+        if (title.includes('Bryt')) infoPanel.style.borderLeftColor = 'var(--uk-color)';
+        else if (title.includes('Franc')) infoPanel.style.borderLeftColor = 'var(--fr-color)';
+        else if (title.includes('Niem')) infoPanel.style.borderLeftColor = 'var(--de-color)';
+        else if (title.includes('USA')) infoPanel.style.borderLeftColor = 'var(--us-color)';
     }
 
-    function showScenario(type) {
-        resetMap();
-        
-        if(type === 'old') {
-            document.querySelector('.btn-old').classList.add('active');
-            // Podświetl stare imperia
-            document.getElementById('uk').classList.add('highlight-old');
-            document.getElementById('france').classList.add('highlight-old');
-            document.getElementById('africa-uk').classList.add('highlight-old');
-            document.getElementById('africa-fr').classList.add('highlight-old');
-            document.getElementById('india').classList.add('highlight-old');
-            document.getElementById('australia').classList.add('highlight-old');
-            document.getElementById('canada').classList.add('highlight-old');
-            // Animuj wykresy
-            animateCharts([100, 33, 0, 0]); 
-        } 
-        else if (type === 'new') {
-            document.querySelector('.btn-new').classList.add('active');
-            // Podświetl nowe imperia
-            document.getElementById('germany').classList.add('highlight-new');
-            document.getElementById('usa').classList.add('highlight-new');
-            document.getElementById('japan').classList.add('highlight-new');
-            // Animuj wykresy
-            animateCharts([50, 20, 100, 100]); 
-        }
-    }
-
-    // Prosta animacja wykresów po załadowaniu
-    setTimeout(() => {
-        document.getElementById('bar-gb').style.width = '100%';
-        document.getElementById('bar-fr').style.width = '35%';
-        document.getElementById('bar-de').style.width = '10%';
-        document.getElementById('bar-us').style.width = '5%';
-    }, 500);
-
-    function animateCharts(values) {
-        // Tu można dodać dynamiczną zmianę wykresów w zależności od kliknięcia
-        // Obecnie zostawiamy widok ogólny
+    function hideInfo() {
+        infoPanel.classList.remove('active');
     }
 
 </script>
