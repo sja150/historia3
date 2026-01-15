@@ -3,272 +3,378 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Imperia Kolonialne - Wersja Interaktywna v2</title>
+    <title>Imperia Kolonialne - Mapa Strategiczna</title>
     <style>
         :root {
-            --bg-dark: #1a1a2e;
-            --text-light: #e0e0e0;
-            /* Kolory Imperiów */
-            --uk-color: rgba(220, 20, 60, 0.7);     /* Czerwień brytyjska */
-            --fr-color: rgba(30, 144, 255, 0.7);    /* Błękit francuski */
-            --de-color: rgba(105, 105, 105, 0.8);   /* Szarość niemiecka */
-            --us-color: rgba(65, 105, 225, 0.7);    /* Granat USA */
-            --route-color: rgba(255, 215, 0, 0.6);  /* Złoty dla szlaków */
+            /* Paleta Kolorów - Dark Mode / Neon */
+            --bg-deep: #050510;
+            --land-fill: #1a1a2e;
+            --land-stroke: #2f2f4f;
+            
+            /* Kolory Imperiów (jasne, neonowe wersje) */
+            --uk-color: #ff3366;    /* Neonowy Róż/Czerwień */
+            --fr-color: #00ccff;    /* Cyjan */
+            --de-color: #ffd700;    /* Złoty */
+            --us-color: #9933ff;    /* Fiolet */
+            --ru-color: #00ff99;    /* Zieleń */
         }
 
         body {
+            background-color: var(--bg-deep);
+            color: white;
+            font-family: 'Segoe UI', sans-serif;
             margin: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-dark);
-            color: var(--text-light);
-            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
         }
 
-        h1, h2 { text-align: center; margin: 10px 0; text-transform: uppercase; letter-spacing: 2px;}
-        .subtitle { text-align: center; color: #a0a0a0; margin-bottom: 20px; }
-
-        /* Kontener główny */
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
+        header {
+            width: 100%;
+            padding: 15px;
+            background: rgba(255,255,255,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #333;
+            box-sizing: border-box;
         }
 
-        /* Oś czasu */
-        .timeline-control {
-            background: #0f0f1a;
-            padding: 20px;
-            border-radius: 15px;
-            margin-bottom: 30px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-            text-align: center;
+        h1 { margin: 0; font-size: 1.5rem; letter-spacing: 2px; text-transform: uppercase; }
+        
+        .controls {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        /* Suwak Osi Czasu */
+        .timeline-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #111;
+            padding: 5px 15px;
+            border-radius: 20px;
+            border: 1px solid #444;
         }
         
         input[type=range] {
-            width: 80%;
-            margin: 15px 0;
-        }
-
-        .timeline-labels {
-            display: flex;
-            justify-content: space-between;
-            width: 85%;
-            margin: 0 auto;
-            font-weight: bold;
-            color: #a0a0a0;
-        }
-        .active-label { color: #fff; text-shadow: 0 0 10px #fff;}
-
-
-        /* MAPA - To jest kluczowa sekcja */
-        .map-wrapper {
-            position: relative;
-            width: 100%;
-            /* Tło udające starą mapę - możesz tu wstawić prawdziwy obrazek w url() */
-            background-image: url('https://www.transparenttextures.com/patterns/aged-paper.png'), linear-gradient(to bottom, #2c3e50, #1a1a2e); 
-            background-blend-mode: overlay;
-            height: 600px;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: inset 0 0 100px rgba(0,0,0,0.8), 0 10px 30px rgba(0,0,0,0.5);
-            border: 3px solid #3a3a5a;
-        }
-
-        /* Bazowa mapa konturowa (dla orientacji) - bardzo subtelna */
-        .base-map-svg {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            opacity: 0.2;
-            pointer-events: none;
-        }
-        .base-land { fill: #000; stroke: #555; stroke-width: 0.5; }
-
-        /* GŁÓWNE ELEMENTY PODŚWIETLENIA (Gradientowe Aury) */
-        .aura {
-            position: absolute;
-            border-radius: 50%;
-            filter: blur(40px); /* Kluczowy efekt rozmycia */
-            mix-blend-mode: screen; /* Sprawia, że kolory "świecą" */
-            opacity: 0.6;
-            transition: all 0.8s ease-in-out;
+            width: 150px;
             cursor: pointer;
         }
 
-        .aura:hover { opacity: 0.9; filter: blur(30px); transform: scale(1.1); }
+        .year-display {
+            font-family: monospace;
+            font-size: 1.2rem;
+            color: var(--de-color);
+            min-width: 60px;
+        }
 
-        /* Style dla konkretnych państw */
-        .uk-aura { background: radial-gradient(circle, var(--uk-color) 0%, transparent 70%); }
-        .fr-aura { background: radial-gradient(circle, var(--fr-color) 0%, transparent 70%); }
-        .de-aura { background: radial-gradient(circle, var(--de-color) 0%, transparent 70%); }
-        .us-aura { background: radial-gradient(circle, var(--us-color) 0%, transparent 70%); }
+        /* GŁÓWNA MAPA */
+        .map-viewport {
+            position: relative;
+            width: 95vw;
+            height: 80vh; /* Mapa zajmuje większość ekranu */
+            margin-top: 20px;
+            border: 1px solid #333;
+            border-radius: 10px;
+            background: radial-gradient(circle at center, #0f0f25 0%, #000 100%);
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+            overflow: hidden;
+        }
 
-        /* Pozycjonowanie aur na mapie (procentowe, aby było responsywne) */
-        /* UK & Indie */
-        .pos-uk { top: 15%; left: 47%; width: 10%; height: 15%; }
-        .pos-india { top: 40%; left: 65%; width: 15%; height: 20%; }
-        .pos-cape { top: 70%; left: 50%; width: 12%; height: 15%; } /* Kapsztad */
+        /* SVG Mapa */
+        svg {
+            width: 100%;
+            height: 100%;
+            filter: drop-shadow(0 0 10px rgba(0,0,0,0.5));
+        }
+
+        .land {
+            fill: var(--land-fill);
+            stroke: var(--land-stroke);
+            stroke-width: 0.5;
+            transition: fill 0.3s;
+        }
         
-        /* Francja */
-        .pos-fr-africa { top: 35%; left: 42%; width: 18%; height: 25%; } /* Afryka Zach */
-        .pos-indochina { top: 45%; left: 78%; width: 8%; height: 15%; }
-        
-        /* Niemcy (pojawiają się później) */
-        .pos-de-togo { top: 45%; left: 48%; width: 6%; height: 8%; }
-        .pos-de-namibia { top: 65%; left: 48%; width: 8%; height: 10%; }
-
-        /* USA (ekspansja) */
-        .pos-usa-main { top: 25%; left: 15%; width: 25%; height: 30%; }
-        .pos-usa-carib { top: 45%; left: 25%; width: 10%; height: 10%; } /* Kuba etc */
-        .pos-usa-phil { top: 50%; left: 85%; width: 8%; height: 12%; } /* Filipiny */
-
-
-        /* SZLAKI WODNE */
-        .routes-svg {
+        /* AURY (Podświetlenia) - Kluczowy element graficzny */
+        .aura-layer {
             position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none;
-            filter: drop-shadow(0 0 5px gold);
-        }
-        .route-line {
-            fill: none;
-            stroke: var(--route-color);
-            stroke-width: 2;
-            stroke-dasharray: 10, 10;
-            opacity: 0.5;
-            animation: dashMove 30s linear infinite;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none; /* Żeby kliknięcia przechodziły do mapy */
         }
 
-        @keyframes dashMove {
-            to { stroke-dashoffset: -200; }
-        }
-
-        /* LOGIKA OSI CZASU (Ukrywanie/Pokazywanie) */
-        
-        /* Stan domyślny (Połowa XIX w.) - ukrywamy "nowe" imperia */
-        .map-wrapper[data-era="early"] .era-late-only {
+        .aura {
+            position: absolute;
+            border-radius: 50%;
+            background: radial-gradient(circle, currentColor 0%, transparent 70%);
             opacity: 0;
-            transform: scale(0);
+            filter: blur(25px); /* To tworzy efekt miękkiego światła */
+            mix-blend-mode: screen; /* Sprawia, że kolory "świecą" na ciemnym tle */
+            transition: opacity 1s ease, transform 1s ease;
+            transform: scale(0.5);
         }
-        
-        /* Stan późny (Przełom XIX/XX w.) - pokazujemy wszystko */
-        .map-wrapper[data-era="late"] .era-late-only {
-            opacity: 1;
+
+        .aura.active {
+            opacity: 0.6;
             transform: scale(1);
         }
-
-        /* Panel Informacyjny */
-        #info-panel {
-            background: rgba(15, 15, 26, 0.95);
-            position: absolute;
-            bottom: 20px;
-            left: 20px;
-            width: 300px;
-            padding: 20px;
-            border-radius: 10px;
-            border-left: 4px solid #fff;
-            backdrop-filter: blur(10px);
-            transform: translateY(150%); /* Domyślnie ukryty */
-            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        
+        /* Animacja pulsowania dla aktywnych aur */
+        .aura.active {
+            animation: pulse 4s infinite alternate;
         }
-        #info-panel.active { transform: translateY(0); }
-        #info-title { margin: 0 0 10px 0; color: gold; }
-        #info-desc { font-size: 0.9rem; line-height: 1.4; }
-        .close-btn { position: absolute; top: 5px; right: 10px; cursor: pointer; font-weight: bold;}
+
+        @keyframes pulse {
+            0% { opacity: 0.5; filter: blur(25px); }
+            100% { opacity: 0.7; filter: blur(35px); }
+        }
+
+        /* Style specyficzne dla państw */
+        .uk { color: var(--uk-color); }
+        .fr { color: var(--fr-color); }
+        .de { color: var(--de-color); }
+        .us { color: var(--us-color); }
+        .ru { color: var(--ru-color); }
+
+        /* Pozycjonowanie Aur (procenty względem kontenera mapy) */
+        /* Wielka Brytania */
+        .pos-uk-home { top: 18%; left: 47%; width: 5%; height: 8%; }
+        .pos-uk-canada { top: 15%; left: 15%; width: 20%; height: 20%; }
+        .pos-uk-india { top: 38%; left: 66%; width: 8%; height: 12%; }
+        .pos-uk-africa { top: 40%; left: 52%; width: 5%; height: 30%; } /* Oś Kair-Kapsztad */
+        .pos-uk-aus { top: 65%; left: 80%; width: 12%; height: 15%; }
+
+        /* Francja */
+        .pos-fr-home { top: 21%; left: 48%; width: 3%; height: 5%; }
+        .pos-fr-africa { top: 35%; left: 45%; width: 10%; height: 15%; }
+        .pos-fr-indo { top: 40%; left: 78%; width: 5%; height: 8%; }
+
+        /* Niemcy */
+        .pos-de-home { top: 20%; left: 50%; width: 2%; height: 3%; }
+        .pos-de-africa { top: 50%; left: 50%; width: 5%; height: 10%; } /* Namibia/Togo */
+
+        /* USA */
+        .pos-us-main { top: 25%; left: 15%; width: 15%; height: 15%; }
+        .pos-us-phil { top: 45%; left: 85%; width: 5%; height: 8%; }
+
+        /* Rosja */
+        .pos-ru-main { top: 15%; left: 55%; width: 35%; height: 20%; }
+
+        /* SZLAKI WODNE - Animowane linie */
+        .route {
+            fill: none;
+            stroke-width: 1.5;
+            stroke-dasharray: 5, 5;
+            opacity: 0.4;
+            animation: flow 2s linear infinite;
+        }
+        
+        @keyframes flow {
+            from { stroke-dashoffset: 10; }
+            to { stroke-dashoffset: 0; }
+        }
+
+        /* Panel Legendy / Interakcji */
+        .legend {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+            background: rgba(0,0,0,0.8);
+            padding: 10px 20px;
+            border-radius: 30px;
+            border: 1px solid #444;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            opacity: 0.7;
+            transition: 0.3s;
+            padding: 5px 10px;
+            border-radius: 15px;
+        }
+
+        .legend-item:hover, .legend-item.selected {
+            opacity: 1;
+            background: rgba(255,255,255,0.1);
+            box-shadow: 0 0 10px currentColor;
+        }
+
+        .dot { width: 12px; height: 12px; border-radius: 50%; }
 
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>Rywalizacja Mocarstw</h1>
-    <p class="subtitle">Wizualizacja ekspansji kolonialnej XIX/XX w.</p>
+<header>
+    <h1>Kolonializm 3.0</h1>
+    <div class="controls">
+        <div class="timeline-container">
+            <span>Rok:</span>
+            <span class="year-display" id="yearVal">1850</span>
+            <input type="range" id="timeSlider" min="1850" max="1914" step="1" value="1850">
+        </div>
+    </div>
+</header>
 
-    <div class="timeline-control">
-        <h2 id="era-title">Połowa XIX wieku</h2>
-        <input type="range" id="timelineSlider" min="0" max="1" step="1" value="0">
-        <div class="timeline-labels">
-            <span id="label-early" class="active-label">← Stare Imperia (do 1870)</span>
-            <span id="label-late">Nowy Imperializm (po 1870) →</span>
+<div class="map-viewport">
+    <svg viewBox="0 0 1000 500" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <linearGradient id="routeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" style="stop-color:transparent" />
+                <stop offset="50%" style="stop-color:gold" />
+                <stop offset="100%" style="stop-color:transparent" />
+            </linearGradient>
+        </defs>
+
+        <g transform="scale(1, 1)">
+            <path class="land" d="M 50,50 L 150,30 L 300,30 L 350,150 L 250,200 L 100,150 Z M 150,30 L 250,30 L 280,100 L 150,120 Z" 
+                  style="d: path('M182,109 L295,97 L341,162 L285,247 L253,243 L233,280 L204,272 L185,200 L113,150 L121,114 Z');" /> 
+            <path class="land" d="M165,65 Q280,45 320,130 L280,250 L240,260 L220,220 L120,140 Z" /> <path class="land" d="M260,265 L350,280 L320,450 L250,380 Z" /> <path class="land" d="M430,70 L550,60 L540,140 L480,145 Z" /> <path class="land" d="M420,155 L580,150 L600,280 L520,380 L440,250 Z" /> <path class="land" d="M550,60 L900,60 L950,150 L850,250 L750,300 L650,220 L580,150 Z" /> <path class="land" d="M780,320 L920,310 L920,420 L780,400 Z" /> <path class="land" d="M465,115 L485,110 L485,130 L470,130 Z" /> </g>
+
+        <path id="route-atlantic" class="route" stroke="#9933ff" d="M460,130 Q300,180 280,220" style="display:none"/>
+        <path id="route-suez" class="route" stroke="gold" d="M520,150 Q560,180 650,250" style="display:none"/>
+
+    </svg>
+
+    <div class="aura-layer">
+        <div class="aura uk pos-uk-home active" id="uk-home"></div>
+        <div class="aura uk pos-uk-canada active" id="uk-can"></div>
+        <div class="aura uk pos-uk-india active" id="uk-ind"></div>
+        <div class="aura uk pos-uk-aus active" id="uk-aus"></div>
+        <div class="aura uk pos-uk-africa" id="uk-afr"></div>
+
+        <div class="aura fr pos-fr-home active" id="fr-home"></div>
+        <div class="aura fr pos-fr-africa" id="fr-afr"></div>
+        <div class="aura fr pos-fr-indo" id="fr-ind"></div>
+
+        <div class="aura de pos-de-home active" id="de-home"></div>
+        <div class="aura de pos-de-africa" id="de-afr"></div>
+
+        <div class="aura us pos-us-main active" id="us-main"></div>
+        <div class="aura us pos-us-phil" id="us-phil"></div>
+
+        <div class="aura ru pos-ru-main active" id="ru-main"></div>
+    </div>
+    
+    <div class="legend">
+        <div class="legend-item" onclick="filterEmpire('uk')" style="color:var(--uk-color)">
+            <div class="dot" style="background:var(--uk-color)"></div> Wlk. Brytania
+        </div>
+        <div class="legend-item" onclick="filterEmpire('fr')" style="color:var(--fr-color)">
+            <div class="dot" style="background:var(--fr-color)"></div> Francja
+        </div>
+        <div class="legend-item" onclick="filterEmpire('de')" style="color:var(--de-color)">
+            <div class="dot" style="background:var(--de-color)"></div> Niemcy
+        </div>
+        <div class="legend-item" onclick="filterEmpire('us')" style="color:var(--us-color)">
+            <div class="dot" style="background:var(--us-color)"></div> USA
+        </div>
+        <div class="legend-item" onclick="filterEmpire('ru')" style="color:var(--ru-color)">
+            <div class="dot" style="background:var(--ru-color)"></div> Rosja
         </div>
     </div>
 
-    <div class="map-wrapper" id="mainMap" data-era="early">
-        
-        <svg class="base-map-svg" viewBox="0 0 1000 600" xmlns="http://www.w3.org/2000/svg">
-             <path class="base-land" d="M100,100 Q200,50 300,100 T500,100 T700,50 T900,100 V200 H100 Z" /> <path class="base-land" d="M150,300 Q250,350 300,500 H200 Z" /> <path class="base-land" d="M450,300 Q550,350 600,550 H450 Z" /> <path class="base-land" d="M650,250 Q750,300 850,350 V200 H650 Z" /> </svg>
-
-        <svg class="routes-svg" viewBox="0 0 1000 600">
-            <path class="route-line era-late-only" d="M 480 150 Q 530 180 600 220 T 680 300" />
-            <path class="route-line" d="M 200 200 Q 350 180 450 150" />
-        </svg>
-
-        <div class="aura uk-aura pos-uk" onclick="showInfo('Wielka Brytania', 'Imperium, nad którym słońce nie zachodzi. Kontrola mórz, największa flota. Metropolia.')"></div>
-        <div class="aura uk-aura pos-india" onclick="showInfo('Indie Brytyjskie', '„Perła w Koronie”. Źródło bawełny, herbaty i rynek zbytu. Kluczowa kolonia.')"></div>
-        <div class="aura uk-aura pos-cape" onclick="showInfo('Afryka Południowa', 'Strategiczny punkt na drodze do Indii (zanim otwarto Kanał Sueski). Kopalnie złota i diamentów.')"></div>
-
-        <div class="aura fr-aura pos-fr-africa" onclick="showInfo('Francuska Afryka Zach.', 'Olbrzymie terytoria saharyjskie i subsaharyjskie. Misja cywilizacyjna.')"></div>
-        <div class="aura fr-aura pos-indochina era-late-only" onclick="showInfo('Indochiny Francuskie', 'Dzisiejszy Wietnam, Laos, Kambodża. Ryż, kauczuk. Zdobyte w II poł. XIX w.')"></div>
-
-        <div class="aura de-aura pos-de-togo era-late-only" onclick="showInfo('Niemieckie Kolonie', 'Togo, Kamerun. Niemcy spóźnione na podział świata żądały „miejsca pod słońcem”.')"></div>
-        <div class="aura de-aura pos-de-namibia era-late-only" onclick="showInfo('Niemiecka Afryka Płd.-Zach.', 'Dzisiejsza Namibia. Brutalne tłumienie powstań (Herero i Nama).')"></div>
-
-        <div class="aura us-aura pos-usa-main" onclick="showInfo('USA (Ekspansja Kontynentalna)', 'Realizacja „Boskiego Przeznaczenia” (Manifest Destiny). Opanowanie kontynentu od Atlantyku do Pacyfiku.')"></div>
-        <div class="aura us-aura pos-usa-carib era-late-only" onclick="showInfo('Karaiby (Strefa wpływów USA)', 'Po wojnie z Hiszpanią (1898): kontrola nad Kubą i Portoryko. Budowa Kanału Panamskiego.')"></div>
-        <div class="aura us-aura pos-usa-phil era-late-only" onclick="showInfo('Filipiny (USA)', 'Baza wypadowa na Pacyfik i w stronę Chin, zdobyta po 1898 roku.')"></div>
-
-        <div id="info-panel">
-            <span class="close-btn" onclick="hideInfo()">X</span>
-            <h3 id="info-title">Tytuł</h3>
-            <p id="info-desc">Opis</p>
-        </div>
-
-    </div>
 </div>
 
 <script>
-    const slider = document.getElementById('timelineSlider');
-    const mapWrapper = document.getElementById('mainMap');
-    const eraTitle = document.getElementById('era-title');
-    const labelEarly = document.getElementById('label-early');
-    const labelLate = document.getElementById('label-late');
-    const infoPanel = document.getElementById('info-panel');
-    const infoTitle = document.getElementById('info-title');
-    const infoDesc = document.getElementById('info-desc');
+    const slider = document.getElementById('timeSlider');
+    const yearDisplay = document.getElementById('yearVal');
+    
+    // Elementy mapy do sterowania
+    const elements = {
+        uk_afr: document.getElementById('uk-afr'),
+        fr_afr: document.getElementById('fr-afr'),
+        fr_ind: document.getElementById('fr-ind'),
+        de_afr: document.getElementById('de-afr'),
+        us_phil: document.getElementById('us-phil'),
+        route_atl: document.getElementById('route-atlantic'),
+        route_suez: document.getElementById('route-suez')
+    };
 
-    // Obsługa Osi Czasu
-    slider.addEventListener('input', function() {
-        if (this.value === "0") {
-            // Wczesny okres
-            mapWrapper.setAttribute('data-era', 'early');
-            eraTitle.innerText = "Połowa XIX wieku (Dominacja Starych Imperiów)";
-            labelEarly.classList.add('active-label');
-            labelLate.classList.remove('active-label');
-            hideInfo(); // Ukryj info przy zmianie czasu
+    // Logika Osi Czasu
+    slider.addEventListener('input', (e) => {
+        const year = parseInt(e.target.value);
+        yearDisplay.innerText = year;
+
+        // Scenariusz historyczny
+        
+        // 1. Afryka (Wyścig o Afrykę startuje na dobre po 1880)
+        if (year > 1880) {
+            elements.uk_afr.classList.add('active');
+            elements.fr_afr.classList.add('active');
         } else {
-            // Późny okres
-            mapWrapper.setAttribute('data-era', 'late');
-            eraTitle.innerText = "Przełom XIX i XX wieku (Wyścig o Afrykę i Pacyfik)";
-            labelEarly.classList.remove('active-label');
-            labelLate.classList.add('active-label');
-            hideInfo();
+            elements.uk_afr.classList.remove('active');
+            elements.fr_afr.classList.remove('active');
+        }
+
+        // 2. Niemcy (Wchodzą do gry po 1884)
+        if (year > 1884) {
+            elements.de_afr.classList.add('active');
+        } else {
+            elements.de_afr.classList.remove('active');
+        }
+
+        // 3. Francja w Indochinach (umocnienie ok 1887)
+        if (year > 1887) {
+            elements.fr_ind.classList.add('active');
+        } else {
+            elements.fr_ind.classList.remove('active');
+        }
+
+        // 4. USA (Wojna z Hiszpanią 1898)
+        if (year >= 1898) {
+            elements.us_phil.classList.add('active');
+            elements.route_atl.style.display = 'block'; // Wzrost handlu
+        } else {
+            elements.us_phil.classList.remove('active');
+            elements.route_atl.style.display = 'none';
+        }
+
+        // 5. Kanał Sueski (Otwarty 1869, ale kluczowy później)
+        if (year > 1869) {
+            elements.route_suez.style.display = 'block';
+        } else {
+            elements.route_suez.style.display = 'none';
         }
     });
 
-    // Obsługa Panelu Informacyjnego
-    function showInfo(title, desc) {
-        infoTitle.innerText = title;
-        infoDesc.innerText = desc;
-        infoPanel.classList.add('active');
-        // Zmiana koloru ramki panelu w zależności od imperium (opcjonalne)
-        if (title.includes('Bryt')) infoPanel.style.borderLeftColor = 'var(--uk-color)';
-        else if (title.includes('Franc')) infoPanel.style.borderLeftColor = 'var(--fr-color)';
-        else if (title.includes('Niem')) infoPanel.style.borderLeftColor = 'var(--de-color)';
-        else if (title.includes('USA')) infoPanel.style.borderLeftColor = 'var(--us-color)';
+    // Filtrowanie (Klikanie w legendę)
+    function filterEmpire(code) {
+        // Zresetuj wszystkie na chwilę
+        const allAuras = document.querySelectorAll('.aura');
+        
+        // Sprawdź czy już jest przefiltrowane
+        const isActive = document.querySelector(`.aura.${code}`).style.opacity === '1';
+
+        allAuras.forEach(el => {
+            // Jeśli klikamy, przygaszamy inne, podświetlamy wybrane
+            if (el.classList.contains(code)) {
+                el.style.opacity = '1';
+                el.style.transform = 'scale(1.1)';
+            } else {
+                el.style.opacity = '0.1';
+                el.style.transform = 'scale(1)';
+            }
+        });
+        
+        // Jeśli klikniesz drugi raz - reset do widoku ogólnego
+        // (Tu uproszczona logika - odświeżenie suwaka przywróci stan historyczny)
+        slider.dispatchEvent(new Event('input'));
     }
 
-    function hideInfo() {
-        infoPanel.classList.remove('active');
-    }
+    // Inicjalizacja
+    slider.dispatchEvent(new Event('input'));
 
 </script>
 
